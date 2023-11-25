@@ -3,8 +3,9 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"log"
+	"math/big"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -54,7 +55,26 @@ func main() {
 		if len(v) != 2 {
 			log.Fatal("invalid vertex format")
 		}
-		g.AddVectex(v[0], v[1])
+		if err := g.AddVectex(v[0], v[1]); err != nil {
+			log.Fatal(err)
+		}
 	}
-	fmt.Println(g)
+	g.ShuffleColors()
+	if err := g.CalcVertexParams(); err != nil {
+		log.Fatal(err)
+	}
+	graphData := g.SendPublicData()
+	for k, v := range g.Edges {
+		rand.Shuffle(len(v), func(i, j int) {
+			v[i], v[j] = v[j], v[i]
+		})
+		Z1 := new(big.Int).Exp(graphData[k].Z, g.C(k), graphData[k].N)
+		for i := range v {
+			Z2 := new(big.Int).Exp(graphData[v[i]].Z, g.C(v[i]), graphData[v[i]].N)
+			if Z1.Bit(0) == Z2.Bit(0) && Z1.Bit(1) == Z2.Bit(1) {
+				log.Fatal("alice is caught CHEATING!")
+			}
+		}
+	}
+	log.Println("alice proved she knows the correct graph coloring")
 }
