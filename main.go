@@ -15,8 +15,14 @@ import (
 
 const maxVertexCount = 1001
 
+const (
+	zeroKnowledgeMode = "zero-knowledge"
+	bfsMode           = "bfs"
+)
+
 func main() {
 	filename := flag.String("f", "", "graph info")
+	mode := flag.String("m", "zero-knowledge", "proof mode")
 	flag.Parse()
 	file, err := os.Open(*filename)
 	if err != nil {
@@ -59,6 +65,20 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	switch strings.ToLower(*mode) {
+	case zeroKnowledgeMode:
+		zeroKnowledgeProof(g)
+	case bfsMode:
+		if err := g.Bfs(); err != nil {
+			log.Fatal(err)
+		}
+		log.Println("graph coloring is proper!")
+	default:
+		log.Fatal("invalid method to proof proper graph coloring")
+	}
+}
+
+func zeroKnowledgeProof(g *graph.Graph) {
 	g.ShuffleColors()
 	if err := g.CalcVertexParams(); err != nil {
 		log.Fatal(err)
@@ -76,5 +96,5 @@ func main() {
 			}
 		}
 	}
-	log.Println("alice proved she knows the correct graph coloring")
+	log.Println("alice proved she knows proper graph coloring")
 }
