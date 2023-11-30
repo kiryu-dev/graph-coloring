@@ -4,7 +4,7 @@ filename = str(uuid.uuid4())
 file = open(filename, "w")
 
 colors = ['R', 'Y', 'B']
-VERTEX_COUNT = 999
+VERTEX_COUNT = 297
 buf = [f'{VERTEX_COUNT},{VERTEX_COUNT}']
 
 for i in range(1, VERTEX_COUNT):

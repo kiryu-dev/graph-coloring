@@ -57,7 +57,7 @@ func (g *Graph) AddEdge(from, to string) {
 }
 
 func (g *Graph) AddVectex(v, color string) error {
-	if _, ok := colors[color]; !ok {
+	if _, ok := colors[color]; !ok { // try to add vertex with non-existing color
 		return errInvalidColor
 	}
 	g.vertices[v] = &vertexInfo{
@@ -67,8 +67,8 @@ func (g *Graph) AddVectex(v, color string) error {
 }
 
 func (g *Graph) ShuffleColors() {
-	shuffled := reflect.ValueOf(colors).MapKeys()
-	mathrand.Shuffle(len(shuffled), func(i, j int) {
+	shuffled := reflect.ValueOf(colors).MapKeys()    // get all keys from color map
+	mathrand.Shuffle(len(shuffled), func(i, j int) { // shuffle them
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 	for k, v := range g.vertices {
@@ -80,43 +80,43 @@ func (g *Graph) ShuffleColors() {
 func (g *Graph) CalcVertexParams() error {
 	for k, v := range g.vertices {
 		r, err := rand.Int(rand.Reader, new(big.Int).
-			Exp(big.NewInt(10), big.NewInt(32), nil))
+			Exp(big.NewInt(10), big.NewInt(20), nil))
 		if err != nil {
 			return err
 		}
-		bits := getReplacementBits(v.color)
+		bits := getReplacementBits(v.color) // get color bits
 		for i, bit := range bits {
 			r.SetBit(r, i, bit)
 		}
 		g.vertices[k].r = r
-		g.vertices[k].P, err = rand.Prime(rand.Reader, 256)
+		g.vertices[k].P, err = rand.Prime(rand.Reader, 64)
 		if err != nil {
 			return err
 		}
-		g.vertices[k].Q, err = rand.Prime(rand.Reader, 256)
+		g.vertices[k].Q, err = rand.Prime(rand.Reader, 64)
 		if err != nil {
 			return err
 		}
 		g.vertices[k].N = new(big.Int).Mul(g.vertices[k].P, g.vertices[k].Q)
 		f := new(big.Int).Mul(
 			new(big.Int).Add(g.vertices[k].P, big.NewInt(-1)),
-			new(big.Int).Add(g.vertices[k].Q, big.NewInt(-1)))
+			new(big.Int).Add(g.vertices[k].Q, big.NewInt(-1))) // f = (p-1)(q-1)
 		g.vertices[k].d, err = rand.Int(rand.Reader, new(big.Int).
-			Exp(big.NewInt(10), big.NewInt(32), nil))
+			Exp(big.NewInt(10), big.NewInt(20), nil))
 		if err != nil {
 			return err
 		}
-		euc, err := crypto.BigEuclidean(g.vertices[k].d, f)
+		euc, err := crypto.BigEuclidean(g.vertices[k].d, f) // calc c RSA param
 		if err != nil {
 			return err
 		}
 		for euc.Gcd.Cmp(big.NewInt(1)) != 0 {
 			g.vertices[k].d, err = rand.Int(rand.Reader, new(big.Int).
-				Exp(big.NewInt(10), big.NewInt(32), nil))
+				Exp(big.NewInt(10), big.NewInt(20), nil))
 			if err != nil {
 				return err
 			}
-			euc, err = crypto.BigEuclidean(g.vertices[k].d, f)
+			euc, err = crypto.BigEuclidean(g.vertices[k].d, f) // calc c RSA param
 			if err != nil {
 				return err
 			}
@@ -152,18 +152,19 @@ func (g *Graph) C(v string) *big.Int {
 }
 
 func getReplacementBits(color string) []uint {
-	c := uint(colors[color])
-	bitsCount := int(math.Ceil(math.Log2(float64(len(colors)))))
-	bits := make([]uint, bitsCount)
-	for i := range bits {
+	c := uint(colors[color])                                     // get color number
+	bitsCount := int(math.Ceil(math.Log2(float64(len(colors))))) // get bits count
+	bits := make([]uint, bitsCount)                              // bits array
+	for i := range bits {                                        // setting bits
 		bits[i] = c & uint(math.Exp2(float64(i))) >> i
 	}
 	return bits
 }
 
 func (g *Graph) Bfs() error {
+	/* just bfs alg to further ensure graph coloring is proper */
 	var (
-		queue   = []string{getStartVertex(g.Edges)}
+		queue   = []string{getRandVertex(g.Edges)}
 		visited = make(map[string]struct{})
 	)
 	for len(queue) > 0 {
@@ -194,8 +195,19 @@ func (g *Graph) Bfs() error {
 	return nil
 }
 
-func getStartVertex(edges map[string][]string) string {
+func getRandVertex(edges map[string][]string) string {
 	verteces := reflect.ValueOf(edges).MapKeys()
 	idx := mathrand.Intn(len(edges))
 	return verteces[idx].String()
+}
+
+func (g *Graph) GetRandEdge() (string, string) {
+	v1 := getRandVertex(g.Edges)
+	rndIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(g.Edges[v1]))))
+	if err != nil {
+		panic("got rand error")
+	}
+	// rndIdx := mathrand.Intn(len(g.Edges[v1]))
+	v2 := g.Edges[v1][rndIdx.Int64()]
+	return v1, v2
 }
