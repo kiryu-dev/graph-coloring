@@ -94,25 +94,12 @@ func zeroKnowledgeProof(g *graph.Graph, a, e int) {
 		}
 		graphData := g.SendPublicData() // calc Z = r^d mod N & send N, d, Z for every vertex
 		v1, v2 := g.GetRandEdge()       // choose rand edge
-		// fmt.Printf("%d: %s %s\n", i, v1, v2)
 		Z1 := new(big.Int).Exp(graphData[v1].Z, g.C(v1), graphData[v1].N)
 		Z2 := new(big.Int).Exp(graphData[v2].Z, g.C(v2), graphData[v2].N)
 		/* color bits of Z1 & Z2 must be different */
 		if Z1.Bit(0) == Z2.Bit(0) && Z1.Bit(1) == Z2.Bit(1) {
 			log.Fatal("alice is caught CHEATING!")
 		}
-		// for k, v := range g.Edges {
-		// 	rand.Shuffle(len(v), func(i, j int) {
-		// 		v[i], v[j] = v[j], v[i]
-		// 	})
-		// 	Z1 := new(big.Int).Exp(graphData[k].Z, g.C(k), graphData[k].N)
-		// 	for i := range v {
-		// 		Z2 := new(big.Int).Exp(graphData[v[i]].Z, g.C(v[i]), graphData[v[i]].N)
-		// 		if Z1.Bit(0) == Z2.Bit(0) && Z1.Bit(1) == Z2.Bit(1) {
-		// 			log.Fatal("alice is caught CHEATING!")
-		// 		}
-		// 	}
-		// }
 	}
 	log.Println("alice proved she knows proper graph coloring")
 }
